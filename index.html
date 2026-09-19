@@ -2011,10 +2011,7 @@ function submitDecision(id){
     notify(rio.id,'Pekerjaan '+SESS.name+' menunggu konfirmasi Anda: '+DEC_LBL[dec]+' pada '+d.fileName+'.','stamp');
     emailInternal('[Konfirmasi Rio] Pekerjaan '+SESS.name+' menunggu persetujuan Anda','Keputusan: '+DEC_LBL[dec]+'\nDokumen: '+d.fileName+' ('+companyName(d)+')\nCatatan: '+(note||'-')+'\nRekomendasi AI: '+d.ai.action,'Rio Kembara');
   }
-  await sbSaveTable('users',[u]);
-save();
-closeModal();
-render();
+  save(); closeModal(); render();
   toast(isRioDirect?'Keputusan final tersimpan. User telah dinotifikasi.':'Keputusan tersimpan — menunggu konfirmasi Managing Partner.');
 }
 function finalizeDoc(d,final){
