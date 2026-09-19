@@ -1112,9 +1112,10 @@ function mkUser(name,email,pw,role,companyId,extra){
 function mkCompany(name,partnerIds){
   const c={
     id:uid('C'),
-    tenant_id:SESS?SESS.tenant_id:null,
+    tenant_id:activeTenantId(),
     name:name,
-    partnerIds:partnerIds||[]
+    partnerIds:partnerIds||[],
+    createdAt:new Date().toISOString()
   };
   DB.companies.push(c);
   return c;
