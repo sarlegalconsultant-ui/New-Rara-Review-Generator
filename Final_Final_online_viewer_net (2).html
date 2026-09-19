@@ -466,7 +466,12 @@ async function sbSave(){
 }
 async function sbSaveTable(table,rows){
   if(!rows||!rows.length)return;
-  try{ await sb.from(table).upsert(rows,{onConflict:'id'}); }catch(e){}
+  const res=await sb.from(table).upsert(rows,{onConflict:'id'});
+  
+  if(res.error){
+    console.error('Gagal menyimpan '+table+':',res.error);
+    toast('Gagal menyimpan '+table+': '+res.error.message,'err');
+  }
 }
 async function sbDeleteTable(table,ids){
   if(!ids||!ids.length)return;
