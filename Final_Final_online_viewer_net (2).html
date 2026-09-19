@@ -1,3 +1,4 @@
+Put your HTML text here<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -384,8 +385,7 @@ const KEY='rara_db_v5';
 const SUPABASE_URL='https://ahpansubncdvpoecocuu.supabase.co';
 const SUPABASE_KEY='sb_publishable_uRhxfvPKPeecc6Z6NO9ymw_-e7locwQ';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);;
-let DB=null, SESS=null, TENANT=null, PROC=null,
-    PENDING_FILE=null, PENDING_DEMO=null, PENDING_REV_FILE=null;
+let DB=null, SESS=null, PROC=null, PENDING_FILE=null, PENDING_DEMO=null, PENDING_REV_FILE=null;
 function activeTenantId(){
   return SESS&&SESS.tenant_id ? SESS.tenant_id : null;
 }
@@ -466,12 +466,7 @@ async function sbSave(){
 }
 async function sbSaveTable(table,rows){
   if(!rows||!rows.length)return;
-  const res=await sb.from(table).upsert(rows,{onConflict:'id'});
-  
-  if(res.error){
-    console.error('Gagal menyimpan '+table+':',res.error);
-    toast('Gagal menyimpan '+table+': '+res.error.message,'err');
-  }
+  try{ await sb.from(table).upsert(rows,{onConflict:'id'}); }catch(e){}
 }
 async function sbDeleteTable(table,ids){
   if(!ids||!ids.length)return;
@@ -1280,11 +1275,10 @@ async function createWorkspace(){
   DB.tenants.push(tenant);
   DB.users.push(user);
 
-SESS=user;
-localStorage.setItem('rara_session',user.id);
-TENANT=tenant;
-S.view='alldocs';
-render();
+  SESS=user;
+  localStorage.setItem('rara_session',user.id);
+  S.view='alldocs';
+  render();
 }
 function render(){
   if(S.view==='onboard'){ renderOnboarding(); return; }
@@ -1389,46 +1383,13 @@ function doLogin(){
   const u=DB.users.find(function(x){return x.email.toLowerCase()===e.toLowerCase();});
   if(!u||u.pwHash!==btoa(p)){ const el=$('#lerr'); el.style.display='block'; el.textContent='Email atau password salah.'; return; }
   if(!u.active){ const el=$('#lerr'); el.style.display='block'; el.textContent='Akun dinonaktifkan. Hubungi Managing Partner.'; return; }
- SESS=u;
-localStorage.setItem('rara_session',u.id);
-logAct('log-in',u.name,' masuk ke aplikasi');
-save();
+  SESS=u;
+  logAct('log-in',u.name,' masuk ke aplikasi'); save();
   S.view=u.role==='user'?'mydocs':u.role==='lawyer'?'queue':'alldocs';
   render();
   if(u.mustChangePw)openChangePw(true);
 }
-function doLogout(){
-  if(SESS)logAct('log-out',SESS.name,' keluar dari aplikasi');
-  save();
-  localStorage.removeItem('rara_session');
-  SESS=null;
-  TENANT=null;
-  S.view='login';
-  if(!SESS){
-  const sid=localStorage.getItem('rara_session');
-
-  if(sid){
-    const found=(DB.users||[]).find(function(u){
-      return u.id===sid&&u.active;
-    });
-
-    if(found){
-      SESS=found;
-      TENANT=(DB.tenants||[]).find(function(t){
-        return t.id===found.tenant_id;
-      })||null;
-
-      S.view=found.role==='user'
-        ?'mydocs'
-        :found.role==='lawyer'
-          ?'queue'
-          :'alldocs';
-    }
-  }
-}
-render();
-  render();
-}
+function doLogout(){ logAct('log-out',SESS.name,' keluar dari aplikasi'); save(); SESS=null; S.view='login'; render(); }
 function openChangePw(force){
   openModal('<h3>'+ic('key-round')+' Ubah Password</h3>'
   +'<div class="msub">'+(force?'Anda wajib mengganti password default sebelum melanjutkan.':'Password baru minimal 6 karakter.')+'</div>'
@@ -2564,39 +2525,12 @@ DB.logs=Array.isArray(DB.logs)?DB.logs:[];
       const aiRes=await sb.from('settings').select('value').eq('key','aiset').single();
       DB.aiset=aiRes.data?aiRes.data.value:{key:'',model:'gemini-2.0-flash'};
     } else {
-    DB={
-  tenants:[],
-  users:[],
-  companies:[],
-  docs:[],
-  notifs:[],
-  emails:[],
-  logs:[],
-  seq:{memo:0,apr:0},
-  simOffset:0,
-  aiset:{key:'',model:'gemini-2.0-flash'}
-};
+      DB={users:[],companies:[],docs:[],notifs:[],emails:[],logs:[],seq:{memo:0,apr:0},simOffset:0,aiset:{key:'',model:'gemini-2.0-flash'}};
+      DB={users:[],companies:[],docs:[],notifs:[],emails:[],logs:[],seq:{memo:0,apr:0},simOffset:0,aiset:{key:'',model:'gemini-2.0-flash'}};
       S.view='onboard';
       render();
       return;
     }
-    if(!SESS){
-      const sid=localStorage.getItem('rara_session');
-      if(sid){
-        const found=(DB.users||[]).find(function(u){
-          return u.id===sid&&u.active;
-        });
-        if(found){
-          SESS=found;
-          TENANT=(DB.tenants||[]).find(function(t){
-            return t.id===found.tenant_id;
-          })||null;
-          S.view=found.role==='user'?'mydocs':
-                 found.role==='lawyer'?'queue':'alldocs';
-        }
-      }
-    }
-
     render();
   }catch(err){
     document.getElementById('app').innerHTML='<div style="padding:40px;font-family:sans-serif"><b style="color:#B03A2E">Gagal memuat aplikasi:</b> '+esc(err.message)+'<br><br><button onclick="location.reload()" style="padding:10px 18px;background:#6366F1;color:#fff;border:none;border-radius:8px;cursor:pointer">Muat Ulang</button></div>';
