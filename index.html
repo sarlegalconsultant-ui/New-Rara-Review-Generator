@@ -2183,7 +2183,7 @@ function openAddAccount(){
   +'<div class="field"><label>Password Awal (kosongkan = otomatis)</label><input id="a-pw" placeholder="otomatis: rara-XXXX"></div>'
   +'<div class="m-actions"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-green" onclick="submitAddAccount()">'+ic('check')+' Buat Akun</button></div>');
 }
-function submitAddAccount(){
+async function submitAddAccount(){
   const name=$('#a-name').value.trim(), email=$('#a-email').value.trim(), role=$('#a-role').value;
   if(!name||!email)return toast('Nama dan email wajib diisi.','err');
   if(DB.users.some(function(u){return u.email.toLowerCase()===email.toLowerCase();}))return toast('Email sudah digunakan.','err');
@@ -2206,7 +2206,10 @@ const u={
   DB.users.push(u);
   logAct('user-plus',SESS.name,' membuat akun '+roleLabel(u)+' untuk '+name);
   sendEmail(email,'[Rara Review Generator] Akun Anda telah dibuat','Halo '+name+',\n\nAkun Anda telah dibuat oleh '+SESS.name+'.\nEmail: '+email+'\nPassword awal: '+pw+'\n\nAnda wajib mengganti password saat login pertama.');
-  save(); closeModal(); render();
+  await sbSaveTable('users',[u]);
+save();
+closeModal();
+render();
   toast('Akun dibuat. Password awal: '+pw+' (terkirim ke email).');
 }
 function toggleUser(id){
