@@ -1514,9 +1514,15 @@ function viewNew(){
   +'<div class="field"><label>Nama Penandatangan / Pemohon</label><input id="f-nama" value="'+esc(SESS.name)+'"></div>'
   +'<div class="field"><label>Perusahaan Anda</label><select id="f-comp">'+(SESS.role==='admin'
   ?tenantCompanies()
-  :tenantCompanies().filter(function(c){
-    return c.id===SESS.companyId;
-  })
+  :(function(){
+    const me=(DB.users||[]).find(function(u){
+      return u.id===SESS.id;
+    })||SESS;
+
+    return tenantCompanies().filter(function(c){
+      return c.id===me.companyId;
+    });
+  })()
 ).map(function(c){'<option value="'+c.id+'" '+(c.id===SESS.companyId?'selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div>'
   +'<div class="field"><label>Pihak yang Anda Wakili</label><select id="f-pihak" onchange="var el=document.getElementById(\'f-pihak-c\'); if(el) el.style.display=this.value===\'custom\'?\'block\':\'none\';">'
   +'<option>Pihak Pertama</option><option>Pihak Kedua</option><option>Pihak Ketiga</option><option value="custom">Lainnya (tulis sendiri)</option></select>'
