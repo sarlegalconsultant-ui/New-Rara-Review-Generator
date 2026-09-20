@@ -423,7 +423,20 @@ function activeManagingPartner(){
   const t=activeTenant();
   return t&&t.managingPartner?t.managingPartner:'Managing Partner';
 }
-const S={view:'login', docId:null, tab:'ringkasan', filter:'all', upMode:'file'};
+
+function usersForTenant(tid){
+  return (DB.users||[]).filter(function(u){
+    return u.tenant_id===tid;
+  });
+}
+
+function adminForTenant(tid){
+  return usersForTenant(tid).find(function(u){
+    return u.role==='admin'&&u.active;
+  });
+}
+
+const S={view:'login',docId:null,tab:'ringkasan',filter:'all', upMode:'file'};
 const uid=p=>p+'-'+Math.random().toString(36).slice(2,9);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=(n,l)=>String(n).padStart(l||3,'0');
@@ -1150,7 +1163,7 @@ function evaluateAll(silent){
     if(!d.flags)d.flags={};
     if((d.status==='awaiting_lawyer'||d.status==='returned')&&d.request&&!d.flags.out1&&now()>d.request.sla1){
       d.flags.out1=true; ch=true;
-      const law=getUser(d.request.lawyerId), rio=DB.users.find(function(u){return u.role==='admin';});
+      const law=getUser(d.request.lawyerId), rio=adminForTenant(d.tenant_id);
       if(!silent){ notify(law.id,'OUT OF SLA: '+d.fileName+' telah melewati batas 3 hari kerja.','timer');
         notify(rio.id,'Eskalasi: '+d.fileName+' (reviewer '+d.request.lawyerName+') melewati SLA. Anda dapat reassign atau mengambil alih.','shield-alert');
         emailInternal('OUT OF SLA — '+d.fileName,'Dokumen melewati batas SLA 3 hari kerja tanpa keputusan. Eskalasi ke Managing Partner.',d.request.lawyerName); }
@@ -1595,7 +1608,10 @@ async function processNewDoc(text,meta,comp,nama,fType){
   }
   if(!ai)ai=reviewDocument(text,meta,null);
   const y=new Date(now()).getFullYear();
-  const d={id:uid('D'),fileName:meta.fileName,userId:SESS.id,userName:nama,companyId:comp.id,pihak:meta.pihak,text:text,createdAt:now(),ai:ai,
+  const d={
+  id:uid('D'),
+  tenant_id:SESS.tenant_id,
+  fileName:meta.fileName,userId:SESS.id,userName:nama,companyId:comp.id,pihak:meta.pihak,text:text,createdAt:now(),ai:ai,
     status:'reviewed',parentId:null,version:1,memoNo:'RRG-MEMO/'+y+'/'+pad(++DB.seq.memo),comments:[],flags:{},request:null,stage1:null,stage2:null,history:[]};
   DB.docs.push(d);
   logAct('upload',nama,' mengunggah '+meta.fileName+' ('+meta.pihak+', '+comp.name+')'+(ai.engine==='live'?' [AI Live]':' [lokal]'));
@@ -1883,7 +1899,7 @@ function addComment(id){
 
 function startApproval(id){
   const d=DB.docs.find(function(x){return x.id===id;});
-  const laws=lawyersFor(d.companyId);
+  const laws=lawyersFor(d.companyId,d.tenant_id);
   let def=null;
   if(d.parentId){ const ch=chain(d); const withReq=ch.filter(function(c){return c.request;}); if(withReq.length)def=withReq[withReq.length-1].request.lawyerId; }
   openModal('<h3>'+ic('send')+' Minta Approval Lawyer / Legal</h3>'
@@ -1962,7 +1978,10 @@ async function processRevisionDoc(parent,text,fileName,fType){
   }
   if(!ai)ai=reviewDocument(text,{pihak:parent.pihak,company:companyName(parent),fileName:fileName},parent.ai);
   const y=new Date(now()).getFullYear();
-  const d={id:uid('D'),fileName:fileName,userId:parent.userId,userName:parent.userName,companyId:parent.companyId,
+  const d={
+  id:uid('D'),
+  tenant_id:SESS.tenant_id,
+  fileName:fileName,userId:parent.userId,userName:parent.userName,companyId:parent.companyId,
     pihak:parent.pihak,text:text,createdAt:now(),ai:ai,status:'reviewed',parentId:parent.id,version:parent.version+1,
     memoNo:'RRG-MEMO/'+y+'/'+pad(++DB.seq.memo),comments:[],flags:{},request:null,stage1:null,stage2:null,history:[]};
   DB.docs.push(d);
@@ -2008,7 +2027,7 @@ function submitDecision(id){
     finalizeDoc(d,dec);
   }else{
     d.status='awaiting_partner'; d.flags={out1:d.flags.out1};
-    const rio=DB.users.find(function(u){return u.role==='admin';});
+    const rio=adminForTenant(d.tenant_id);
     notify(rio.id,'Pekerjaan '+SESS.name+' menunggu konfirmasi Anda: '+DEC_LBL[dec]+' pada '+d.fileName+'.','stamp');
     emailInternal('[Konfirmasi Rio] Pekerjaan '+SESS.name+' menunggu persetujuan Anda','Keputusan: '+DEC_LBL[dec]+'\nDokumen: '+d.fileName+' ('+companyName(d)+')\nCatatan: '+(note||'-')+'\nRekomendasi AI: '+d.ai.action,'Rio Kembara');
   }
