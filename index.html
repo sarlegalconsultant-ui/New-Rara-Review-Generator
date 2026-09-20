@@ -1523,7 +1523,12 @@ function viewNew(){
       return c.id===me.companyId;
     });
   })()
-).map(function(c){'<option value="'+c.id+'" '+(c.id===SESS.companyId?'selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div>'
+).map(function(c){
+  return '<option value="'+c.id+'">'+
+    esc(c.name)+
+    '</option>';
+}).join('')
++'</select></div>'
   +'<div class="field"><label>Pihak yang Anda Wakili</label><select id="f-pihak" onchange="var el=document.getElementById(\'f-pihak-c\'); if(el) el.style.display=this.value===\'custom\'?\'block\':\'none\';">'
   +'<option>Pihak Pertama</option><option>Pihak Kedua</option><option>Pihak Ketiga</option><option value="custom">Lainnya (tulis sendiri)</option></select>'
   +'<input id="f-pihak-c" placeholder="mis. Pihak Keempat" style="display:none;margin-top:8px"></div>'
