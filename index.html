@@ -559,10 +559,19 @@ function remainTxt(deadline){
 /* ---------- domain ---------- */
 const INBOX='sarlegalconsultant@gmail.com';
 const getUser=id=>DB.users.find(u=>u.id===id);
-function lawyersFor(companyId){
-  const rio=DB.users.find(u=>u.role==='admin');
-  const ps=DB.users.filter(u=>u.role==='lawyer'&&u.active&&(u.partnerOf||[]).includes(companyId));
-  return [rio].concat(ps).filter(Boolean);
+function lawyersFor(companyId,tid){
+  const list=usersForTenant(tid||activeTenantId());
+
+  const mp=list.find(function(u){
+    return u.role==='admin'&&u.active;
+  });
+
+  const ps=list.filter(function(u){
+    return u.role==='lawyer'&&u.active&&
+      (u.partnerOf||[]).includes(companyId);
+  });
+
+  return [mp].concat(ps).filter(Boolean);
 }
 function companyById(id){
   return tenantCompanies().find(function(c){
