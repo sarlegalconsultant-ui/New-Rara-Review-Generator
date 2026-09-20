@@ -2219,7 +2219,8 @@ const u={
   mustChangePw:true,
   partnerOf:[],
   companyId:null,
-  title:role==='lawyer'?'Legal Partner':''
+  title:role==='lawyer'?'Legal Partner':'',
+createdAt:new Date().toISOString()
 };
   if(role==='user')u.companyId=$('#a-comp').value;
   if(role==='lawyer')u.partnerOf=[...$('#a-partner').selectedOptions].map(function(o){return o.value;});
