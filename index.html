@@ -461,6 +461,7 @@ async function sbLoad(){
     tenants:tRes.data||[],
     users:uRes.data||[],
     companies:cRes.data||[],
+    docs:dRes.data||[],
     seq:{memo:seqRow?(seqRow.val||0):0,apr:0},
     simOffset:0,
     aiset:{key:'',model:'gemini-2.0-flash'}
